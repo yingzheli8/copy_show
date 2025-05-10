@@ -32,7 +32,8 @@
       background-color: #f44336;
     }
     #editor {
-      width: 150%;
+      width: 100%;
+      max-width: 1000px;
       height: 750px;
       margin: 0 auto 20px;
       padding: 10px;
@@ -41,7 +42,8 @@
       border-radius: 4px;
       box-sizing: border-box;
       display: none;
-      max-width: 1000px;
+      background: #fff;
+      overflow: auto;
     }
     #content {
       width: 100%;
@@ -61,7 +63,7 @@
     <button id="clear">清空内容</button>
   </div>
 
-  <textarea id="editor" placeholder="在此粘贴或输入文章内容..."></textarea>
+  <div id="editor" contenteditable="true" placeholder="在此粘贴或输入文章内容..." ></div>
   <div id="content"></div>
 
   <script>
@@ -74,21 +76,21 @@
     let currentContent = '';
 
     btnEdit.addEventListener('click', () => {
-      editor.value = currentContent;
+      editor.innerHTML = currentContent;
       editor.style.display = 'block';
       contentDiv.style.display = 'none';
       editor.focus();
     });
 
     btnSave.addEventListener('click', () => {
-      currentContent = editor.value;
-      contentDiv.innerHTML = currentContent.replace(/\r?\n/g, '<br>');
+      currentContent = editor.innerHTML;
+      contentDiv.innerHTML = currentContent;
       contentDiv.style.display = 'block';
       editor.style.display = 'none';
     });
 
     btnClear.addEventListener('click', () => {
-      editor.value = '';
+      editor.innerHTML = '';
       currentContent = '';
       contentDiv.innerHTML = '';
     });

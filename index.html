@@ -20,10 +20,9 @@
 <body>
   <div class="controls" id="controls">
     <button id="edit">开始编辑</button>
-    <button id="save">保存修改</button>
+    <button id="save">保存</button>
+    <button id="saveAndArchive">保存并存档</button>
     <button id="clear">清空内容</button>
-    <button id="modify">修改存档</button>
-    <button id="newArchive">新增存档</button>
   </div>
 
   <div id="editor" contenteditable="true" placeholder="在此粘贴或输入文章内容..."></div>
@@ -34,9 +33,8 @@
     const controls    = document.getElementById('controls');
     const btnEdit     = document.getElementById('edit');
     const btnSave     = document.getElementById('save');
+    const btnSaveAndArchive = document.getElementById('saveAndArchive');
     const btnClear    = document.getElementById('clear');
-    const btnModify   = document.getElementById('modify');
-    const btnNewArchive = document.getElementById('newArchive');
     const editor      = document.getElementById('editor');
     const contentDiv  = document.getElementById('content');
     const archivesDiv = document.getElementById('archives');
@@ -44,7 +42,6 @@
     const MAX_ARCHIVES = 3;
     let currentContent = localStorage.getItem('currentContent') || '';
     let archives = JSON.parse(localStorage.getItem('archives') || '[]');
-    let selectedArchiveIndex = null;  // 用于记录用户选择的存档
 
     function renderArchives() {
       archivesDiv.innerHTML = '';
@@ -74,7 +71,6 @@
 
         // 点击存档恢复内容
         btn.addEventListener('click', () => {
-          selectedArchiveIndex = idx;  // 记录选择的存档
           currentContent = html;
           contentDiv.innerHTML = currentContent;
           contentDiv.style.display = 'block';
@@ -89,6 +85,7 @@
     function showControls() { controls.classList.remove('hidden'); }
     function hideControls() { controls.classList.add('hidden'); }
 
+    // 页面加载时展示已保存内容
     if (currentContent) {
       contentDiv.innerHTML = currentContent;
       contentDiv.style.display = 'block';
@@ -110,10 +107,23 @@
     btnSave.addEventListener('click', () => {
       currentContent = editor.innerHTML;
       localStorage.setItem('currentContent', currentContent);
+      contentDiv.innerHTML = currentContent;
+      contentDiv.style.display = 'block';
+      editor.style.display = 'none';
+      showControls();
+    });
+
+    btnSaveAndArchive.addEventListener('click', () => {
+      currentContent = editor.innerHTML;
+      localStorage.setItem('currentContent', currentContent);
       archives.push(currentContent);
       if (archives.length > MAX_ARCHIVES) archives.shift();
       localStorage.setItem('archives', JSON.stringify(archives));
-      location.reload();
+      renderArchives();
+      contentDiv.innerHTML = currentContent;
+      contentDiv.style.display = 'block';
+      editor.style.display = 'none';
+      showControls();
     });
 
     btnClear.addEventListener('click', () => {
@@ -122,25 +132,6 @@
       contentDiv.innerHTML = '';
       localStorage.removeItem('currentContent');
       showControls();
-    });
-
-    btnModify.addEventListener('click', () => {
-      if (selectedArchiveIndex !== null) {
-        currentContent = editor.innerHTML;
-        archives[selectedArchiveIndex] = currentContent;
-        localStorage.setItem('archives', JSON.stringify(archives));
-        renderArchives();
-        location.reload();
-      }
-    });
-
-    btnNewArchive.addEventListener('click', () => {
-      currentContent = editor.innerHTML;
-      archives.push(currentContent);
-      if (archives.length > MAX_ARCHIVES) archives.shift();
-      localStorage.setItem('archives', JSON.stringify(archives));
-      renderArchives();
-      location.reload();
     });
   </script>
 </body>

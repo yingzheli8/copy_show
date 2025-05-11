@@ -98,9 +98,24 @@
       showControls();
     });
 
+    // 电脑端鼠标移动事件
     contentDiv.addEventListener('mousemove', e => {
       const rect = contentDiv.getBoundingClientRect();
       (e.clientY - rect.top < 50) ? showControls() : hideControls();
+    });
+
+    // 移动端适配：监听触摸滑动事件
+    let touchStartY = 0;
+    contentDiv.addEventListener('touchstart', e => {
+      touchStartY = e.touches[0].clientY;
+    });
+    contentDiv.addEventListener('touchmove', e => {
+      const deltaY = e.touches[0].clientY - touchStartY;
+      if (touchStartY < 80 || deltaY > 20) {
+        showControls();
+      } else {
+        hideControls();
+      }
     });
   </script>
 </body>

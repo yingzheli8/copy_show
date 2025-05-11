@@ -12,11 +12,9 @@
     button#clear { background-color: #f44336; }
     #editor { width: 100%; max-width: 1000px; height: 750px; margin: 0 auto 20px; padding: 10px; font-size: 14px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; display: none; background: #fff; overflow: auto; }
     #content { width: 100%; margin: 0 auto; padding: 10px; background: #fff; border: 1px solid #ddd; border-radius: 4px; min-height: 100px; }
-    #archives { margin-top: 30px; padding-top: 10px; border-top: 1px solid #ccc; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
-    .archive-wrapper { position: relative; display: inline-block; }
-    .archive-btn { padding: 6px 12px; font-size: 12px; border: 1px solid #888; border-radius: 4px; background: #eee; cursor: pointer; }
-    .delete-btn { position: absolute; top: -8px; right: -8px; background: #f44336; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 12px; cursor: pointer; display: none; }
-    .archive-wrapper:hover .delete-btn { display: block; }
+    #archives { margin-top: 30px; padding-top: 10px; border-top: 1px solid #ccc; display: flex; justify-content: center; gap: 10px; }
+    .archive-btn { padding: 6px 12px; font-size: 12px; border: 1px solid #888; border-radius: 4px; background: #eee; cursor: pointer; position: relative; }
+    .delete-btn { position: absolute; top: 0; right: 0; background-color: red; color: white; font-size: 10px; padding: 4px 8px; border: none; border-radius: 50%; cursor: pointer; }
   </style>
 </head>
 <body>
@@ -24,6 +22,8 @@
     <button id="edit">开始编辑</button>
     <button id="save">保存修改</button>
     <button id="clear">清空内容</button>
+    <button id="modify">修改存档</button>
+    <button id="newArchive">新增存档</button>
   </div>
 
   <div id="editor" contenteditable="true" placeholder="在此粘贴或输入文章内容..."></div>
@@ -35,6 +35,8 @@
     const btnEdit     = document.getElementById('edit');
     const btnSave     = document.getElementById('save');
     const btnClear    = document.getElementById('clear');
+    const btnModify   = document.getElementById('modify');
+    const btnNewArchive = document.getElementById('newArchive');
     const editor      = document.getElementById('editor');
     const contentDiv  = document.getElementById('content');
     const archivesDiv = document.getElementById('archives');
@@ -42,17 +44,37 @@
     const MAX_ARCHIVES = 3;
     let currentContent = localStorage.getItem('currentContent') || '';
     let archives = JSON.parse(localStorage.getItem('archives') || '[]');
+    let selectedArchiveIndex = null;  // 用于记录用户选择的存档
 
     function renderArchives() {
       archivesDiv.innerHTML = '';
       archives.forEach((html, idx) => {
-        const wrapper = document.createElement('div');
-        wrapper.className = 'archive-wrapper';
-
         const btn = document.createElement('button');
         btn.textContent = `存档 ${idx+1}`;
         btn.className = 'archive-btn';
+
+        // 创建删除按钮
+        const deleteBtn = document.createElement('button');
+        deleteBtn.textContent = 'X';
+        deleteBtn.className = 'delete-btn';
+        deleteBtn.style.display = 'none';
+        btn.appendChild(deleteBtn);
+
+        // 悬停显示删除按钮
+        btn.addEventListener('mouseenter', () => deleteBtn.style.display = 'block');
+        btn.addEventListener('mouseleave', () => deleteBtn.style.display = 'none');
+
+        // 删除存档
+        deleteBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          archives.splice(idx, 1);
+          localStorage.setItem('archives', JSON.stringify(archives));
+          renderArchives();
+        });
+
+        // 点击存档恢复内容
         btn.addEventListener('click', () => {
+          selectedArchiveIndex = idx;  // 记录选择的存档
           currentContent = html;
           contentDiv.innerHTML = currentContent;
           contentDiv.style.display = 'block';
@@ -60,19 +82,7 @@
           showControls();
         });
 
-        const delBtn = document.createElement('button');
-        delBtn.textContent = 'X';
-        delBtn.className = 'delete-btn';
-        delBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          archives.splice(idx, 1);
-          localStorage.setItem('archives', JSON.stringify(archives));
-          renderArchives();
-        });
-
-        wrapper.appendChild(btn);
-        wrapper.appendChild(delBtn);
-        archivesDiv.appendChild(wrapper);
+        archivesDiv.appendChild(btn);
       });
     }
 
@@ -114,22 +124,23 @@
       showControls();
     });
 
-    contentDiv.addEventListener('mousemove', e => {
-      const rect = contentDiv.getBoundingClientRect();
-      (e.clientY - rect.top < 50) ? showControls() : hideControls();
+    btnModify.addEventListener('click', () => {
+      if (selectedArchiveIndex !== null) {
+        currentContent = editor.innerHTML;
+        archives[selectedArchiveIndex] = currentContent;
+        localStorage.setItem('archives', JSON.stringify(archives));
+        renderArchives();
+        location.reload();
+      }
     });
 
-    let touchStartY = 0;
-    contentDiv.addEventListener('touchstart', e => {
-      touchStartY = e.touches[0].clientY;
-    });
-    contentDiv.addEventListener('touchmove', e => {
-      const deltaY = e.touches[0].clientY - touchStartY;
-      if (touchStartY < 80 || deltaY > 20) {
-        showControls();
-      } else {
-        hideControls();
-      }
+    btnNewArchive.addEventListener('click', () => {
+      currentContent = editor.innerHTML;
+      archives.push(currentContent);
+      if (archives.length > MAX_ARCHIVES) archives.shift();
+      localStorage.setItem('archives', JSON.stringify(archives));
+      renderArchives();
+      location.reload();
     });
   </script>
 </body>

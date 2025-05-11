@@ -12,8 +12,11 @@
     button#clear { background-color: #f44336; }
     #editor { width: 100%; max-width: 1000px; height: 750px; margin: 0 auto 20px; padding: 10px; font-size: 14px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; display: none; background: #fff; overflow: auto; }
     #content { width: 100%; margin: 0 auto; padding: 10px; background: #fff; border: 1px solid #ddd; border-radius: 4px; min-height: 100px; }
-    #archives { margin-top: 30px; padding-top: 10px; border-top: 1px solid #ccc; display: flex; justify-content: center; gap: 10px; }
+    #archives { margin-top: 30px; padding-top: 10px; border-top: 1px solid #ccc; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+    .archive-wrapper { position: relative; display: inline-block; }
     .archive-btn { padding: 6px 12px; font-size: 12px; border: 1px solid #888; border-radius: 4px; background: #eee; cursor: pointer; }
+    .delete-btn { position: absolute; top: -8px; right: -8px; background: #f44336; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 12px; cursor: pointer; display: none; }
+    .archive-wrapper:hover .delete-btn { display: block; }
   </style>
 </head>
 <body>
@@ -43,6 +46,9 @@
     function renderArchives() {
       archivesDiv.innerHTML = '';
       archives.forEach((html, idx) => {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'archive-wrapper';
+
         const btn = document.createElement('button');
         btn.textContent = `存档 ${idx+1}`;
         btn.className = 'archive-btn';
@@ -53,14 +59,26 @@
           editor.style.display = 'none';
           showControls();
         });
-        archivesDiv.appendChild(btn);
+
+        const delBtn = document.createElement('button');
+        delBtn.textContent = '×';
+        delBtn.className = 'delete-btn';
+        delBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          archives.splice(idx, 1);
+          localStorage.setItem('archives', JSON.stringify(archives));
+          renderArchives();
+        });
+
+        wrapper.appendChild(btn);
+        wrapper.appendChild(delBtn);
+        archivesDiv.appendChild(wrapper);
       });
     }
 
     function showControls() { controls.classList.remove('hidden'); }
     function hideControls() { controls.classList.add('hidden'); }
 
-    // 页面加载时展示已保存内容
     if (currentContent) {
       contentDiv.innerHTML = currentContent;
       contentDiv.style.display = 'block';
@@ -85,7 +103,6 @@
       archives.push(currentContent);
       if (archives.length > MAX_ARCHIVES) archives.shift();
       localStorage.setItem('archives', JSON.stringify(archives));
-      // 保存后刷新页面以确保内容刷新
       location.reload();
     });
 
@@ -94,17 +111,14 @@
       currentContent = '';
       contentDiv.innerHTML = '';
       localStorage.removeItem('currentContent');
-      // 不清空存档
       showControls();
     });
 
-    // 电脑端鼠标移动事件
     contentDiv.addEventListener('mousemove', e => {
       const rect = contentDiv.getBoundingClientRect();
       (e.clientY - rect.top < 50) ? showControls() : hideControls();
     });
 
-    // 移动端适配：监听触摸滑动事件
     let touchStartY = 0;
     contentDiv.addEventListener('touchstart', e => {
       touchStartY = e.touches[0].clientY;
@@ -118,5 +132,7 @@
       }
     });
   </script>
+</body>
+</html>
 </body>
 </html>

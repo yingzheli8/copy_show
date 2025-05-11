@@ -3,57 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>在线文章编辑显示</title>
+  <title>简单文章编辑显示</title>
   <style>
-    body {
-      font-family: sans-serif;
-      padding: 20px;
-      max-width: 800px;
-      margin: auto;
-      background: #f9f9f9;
-    }
-    .controls {
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-      margin-bottom: 10px;
-      transition: opacity 0.3s;
-    }
-    .controls.hidden {
-      opacity: 0;
-      pointer-events: none;
-    }
-    button {
-      padding: 8px 16px;
-      font-size: 14px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      background-color: #4CAF50;
-      color: white;
-    }
+    body { font-family: sans-serif; padding: 20px; max-width: 800px; margin: auto; background: #f9f9f9; }
+    .controls { display: flex; justify-content: center; gap: 10px; margin-bottom: 10px; transition: opacity 0.3s; }
+    .controls.hidden { opacity: 0; pointer-events: none; }
+    button { padding: 8px 16px; font-size: 14px; border: none; border-radius: 4px; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1); background-color: #4CAF50; color: white; }
     button#clear { background-color: #f44336; }
-    #editor {
-      width: 100%; max-width: 1000px; height: 750px;
-      margin: 0 auto 20px; padding: 10px;
-      font-size: 14px; border: 1px solid #ccc; border-radius: 4px;
-      box-sizing: border-box; display: none; background: #fff; overflow: auto;
-    }
-    #content {
-      width: 100%; margin: 0 auto; padding: 10px;
-      background: #fff; border: 1px solid #ddd; border-radius: 4px;
-      min-height: 100px;
-    }
-    #archives {
-      margin-top: 30px; padding-top: 10px; border-top: 1px solid #ccc;
-      display: flex; justify-content: center; gap: 10px;
-    }
-    .archive-btn {
-      padding: 6px 12px; font-size: 12px;
-      border: 1px solid #888; border-radius: 4px;
-      background: #eee; cursor: pointer;
-    }
+    #editor { width: 100%; max-width: 1000px; height: 750px; margin: 0 auto 20px; padding: 10px; font-size: 14px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; display: none; background: #fff; overflow: auto; }
+    #content { width: 100%; margin: 0 auto; padding: 10px; background: #fff; border: 1px solid #ddd; border-radius: 4px; min-height: 100px; }
+    #archives { margin-top: 30px; padding-top: 10px; border-top: 1px solid #ccc; display: flex; justify-content: center; gap: 10px; }
+    .archive-btn { padding: 6px 12px; font-size: 12px; border: 1px solid #888; border-radius: 4px; background: #eee; cursor: pointer; }
   </style>
 </head>
 <body>
@@ -68,19 +28,18 @@
   <div id="archives"></div>
 
   <script>
-    const controls   = document.getElementById('controls');
-    const btnEdit    = document.getElementById('edit');
-    const btnSave    = document.getElementById('save');
-    const btnClear   = document.getElementById('clear');
-    const editor     = document.getElementById('editor');
-    const contentDiv = document.getElementById('content');
-    const archivesDiv= document.getElementById('archives');
+    const controls    = document.getElementById('controls');
+    const btnEdit     = document.getElementById('edit');
+    const btnSave     = document.getElementById('save');
+    const btnClear    = document.getElementById('clear');
+    const editor      = document.getElementById('editor');
+    const contentDiv  = document.getElementById('content');
+    const archivesDiv = document.getElementById('archives');
 
-    let currentContent = '';
-    const archives = [];
     const MAX_ARCHIVES = 3;
+    let currentContent = localStorage.getItem('currentContent') || '';
+    let archives = JSON.parse(localStorage.getItem('archives') || '[]');
 
-    // 更新存档区展示
     function renderArchives() {
       archivesDiv.innerHTML = '';
       archives.forEach((html, idx) => {
@@ -88,7 +47,6 @@
         btn.textContent = `存档 ${idx+1}`;
         btn.className = 'archive-btn';
         btn.addEventListener('click', () => {
-          // 恢复存档内容
           currentContent = html;
           contentDiv.innerHTML = currentContent;
           contentDiv.style.display = 'block';
@@ -99,11 +57,20 @@
       });
     }
 
-    // 显示/隐藏控制按钮
     function showControls() { controls.classList.remove('hidden'); }
     function hideControls() { controls.classList.add('hidden'); }
 
-    // 点击“开始编辑”
+    // 页面加载时展示已保存内容
+    if (currentContent) {
+      contentDiv.innerHTML = currentContent;
+      contentDiv.style.display = 'block';
+      hideControls();
+    } else {
+      contentDiv.style.display = 'none';
+      showControls();
+    }
+    renderArchives();
+
     btnEdit.addEventListener('click', () => {
       editor.innerHTML = currentContent;
       editor.style.display = 'block';
@@ -112,36 +79,29 @@
       editor.focus();
     });
 
-    // 点击“保存修改”
     btnSave.addEventListener('click', () => {
       currentContent = editor.innerHTML;
-      contentDiv.innerHTML = currentContent;
-      contentDiv.style.display = 'block';
-      editor.style.display = 'none';
-      // 添加到存档
+      localStorage.setItem('currentContent', currentContent);
       archives.push(currentContent);
       if (archives.length > MAX_ARCHIVES) archives.shift();
-      renderArchives();
-      hideControls();
+      localStorage.setItem('archives', JSON.stringify(archives));
+      // 保存后刷新页面以确保内容刷新
+      location.reload();
     });
 
-    // 点击“清空内容”
     btnClear.addEventListener('click', () => {
       editor.innerHTML = '';
       currentContent = '';
       contentDiv.innerHTML = '';
+      localStorage.removeItem('currentContent');
+      // 不清空存档
       showControls();
     });
 
-    // 鼠标移至内容顶部显示按钮
-    contentDiv.addEventListener('mousemove', (e) => {
+    contentDiv.addEventListener('mousemove', e => {
       const rect = contentDiv.getBoundingClientRect();
-      if (e.clientY - rect.top < 50) showControls(); else hideControls();
+      (e.clientY - rect.top < 50) ? showControls() : hideControls();
     });
-
-    // 初始化
-    showControls();
-    renderArchives();
   </script>
 </body>
 </html>
